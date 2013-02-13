@@ -1,71 +1,68 @@
 
+(function (global) {
+    "use strict";
 
-/**
- * Brings cross-browser inheritance.
- * @author i-one
- */
-;(function (glob, undef) {
-    'use strict';
+    var undefined,
+        Object = global.Object,
+        Function = global.Function,
+        hasOwnProperty = Object.prototype.hasOwnProperty,
+        jone;
 
-    var jone = {},
-        Constr;
+    jone = {
+        version: 1.0,
 
-    /**
-     * Creates a new object with the specified prototype and properties.
-     * @param {Object} proto The object to be the prototype of the newly 
-     *      created object.
-     * @param {Object} properties Optional. The object that defines properties
-     *      of the newly created object. The properties defined here override 
-     *      the prototype properties.
-     */
-    // jone.create = function (proto, properties) {};
+        ownsProperty: function (obj, propertyName) {
+            return hasOwnProperty.call(obj, propertyName);
+        },
 
-    // Check whether the Object.create method is available natively
-    if (Object.create) {
-
-        jone.create = function (proto, properties) {
-            var obj = Object.create(proto),
-                name;
-            if (properties) {
-                for (name in properties) {
-                    obj[name] = properties[name];
+        copyProperties: function (to, from) {
+            var name,
+                value;
+            for (name in from) {
+                if (hasOwnProperty.call(from, name)) {
+                    value = from[name];
+                    if (value !== undefined) {
+                        to[name] = value;
+                    }
                 }
             }
-            return obj;
-        };
+        },
 
-    } else {
+        _simpleCreateObject: (Object.create)
+            ? function (base) {
+                return Object.create(base);
+            }
+            : function (base) {
+                var Temp = function () {},
+                    obj;
+                Temp.prototype = base;
+                obj = new Temp();
+                return obj;
+            },
 
-        // Create an empty function to be used for inheritance. This function is
-        // created only once and then reused in each call of jone.create
-        Constr = function () {};
-
-        jone.create = function (proto, properties) {
-            var obj,
-                name;
-            Constr.prototype = proto;
-            obj = new Constr();
+        createObject: function (base, properties) {
+            var obj = jone._simpleCreateObject(base);
             if (properties) {
-                for (name in properties) {
-                    obj[name] = properties[name]
-                }
+                jone.copyProperties(obj, properties);
             }
             return obj;
-        };
-    }
+        },
 
-    /**
-     * Inherits the prototype of the superConstr in the constr.
-     * @param {Function} constr The constructor function to inherit the 
-     *      prototype of the specified super constrcutor.
-     * @param {Function} superConstr The super constructor function whose 
-     *      properties to be inherited.
-     */
-    jone.extend = function (constr, superConstr, properties) {
-        constr.prototype = jone.create(superConstr, properties);
+        extend: function (ctor, baseCtor, properties) {
+            ctor.prototype = jone.createObject(baseCtor.prototype, properties);
+        },
+
+        createBoundFunction: (Function.prototype.bind)
+            ? function (obj, fn) {
+                return fn.bind(obj);
+            }
+            : function (obj, fn) {
+                return function () {
+                    fn.apply(obj, arguments);
+                };
+            }
     };
 
-    // export
-    glob.jone = jone;
+    global.jone = jone;
 
-}(window));
+}(this));
